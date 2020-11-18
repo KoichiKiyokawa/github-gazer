@@ -6,29 +6,31 @@ from env import token
 
 
 class Repository:
-    def __init__(self, owner: str, repo_name: str):
+    def __init__(self, owner: str, repo_name: str, division: int = 100):
         self.owner = owner
         self.repo_name = repo_name
+        self.division = division
         self.starred_at_count = {}
+
         repo_id, last_index = self.__get_last_index()
         self.repo_id = repo_id
         self.last_index = last_index
 
     def getStarHistory(self):
         # ref) https://karupoimou.hatenablog.com/entry/20200305/1583407204
-        joblib.Parallel(
-            n_jobs=-2, verbose=2)([joblib.delayed(self.process)(index) for index in range(self.last_index + 1)])
-        return self.starred_at_count
+        res = joblib.Parallel(
+            n_jobs=-2, verbose=2)([joblib.delayed(self.process)(index) for index in range(0, self.last_index + 1, self.division)])
+        return res
 
     def process(self, index):
         response = self.__get(
             f'https://api.github.com/repositories/{self.repo_id}/stargazers?page={index}')
-        for each_response in response.json():
-            date_str = each_response['starred_at'].split('T')[0]
-            if date_str not in self.starred_at_count:
-                self.starred_at_count[date_str] = 0
 
-            self.starred_at_count[date_str] += 1
+        last_response = response.json()[-1]
+        date_str = last_response['starred_at'].split('T')[0]
+        res = {}
+        res[date_str] = len(response.json()) * (index + 1)
+        return res # e.g. {'2016-11-27': 30}
 
     def __get(self, endpoint):
         response = requests.get(
