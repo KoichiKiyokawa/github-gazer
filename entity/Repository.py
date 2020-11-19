@@ -6,10 +6,10 @@ from env import token
 
 
 class Repository:
-    def __init__(self, owner: str, repo_name: str, division: int = 100):
+    def __init__(self, owner: str, repo_name: str, step: int = 10):
         self.owner = owner
         self.repo_name = repo_name
-        self.division = division
+        self.step = step
         self.starred_at_count = {}
 
         repo_id, last_index = self.__get_last_index()
@@ -19,7 +19,7 @@ class Repository:
     def getStarHistory(self):
         # ref) https://karupoimou.hatenablog.com/entry/20200305/1583407204
         res = joblib.Parallel(
-            n_jobs=-2, verbose=2)([joblib.delayed(self.process)(index) for index in range(0, self.last_index + 1, self.division)])
+            n_jobs=-2, verbose=2)([joblib.delayed(self.process)(index) for index in range(0, self.last_index + 1, self.step)])
         return res
 
     def process(self, index):
@@ -30,7 +30,7 @@ class Repository:
         date_str = last_response['starred_at'].split('T')[0]
         res = {}
         res[date_str] = len(response.json()) * (index + 1)
-        return res # e.g. {'2016-11-27': 30}
+        return res  # e.g. {'2016-11-27': 30}
 
     def __get(self, endpoint):
         response = requests.get(
