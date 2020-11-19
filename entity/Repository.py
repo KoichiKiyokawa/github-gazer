@@ -10,13 +10,11 @@ class Repository:
         self.owner = owner
         self.repo_name = repo_name
         self.step = step
+
         self.starred_at_count = {}
+        self.repo_id, self.last_index = self.__get_repo_id_and_last_index()
 
-        repo_id, last_index = self.__get_last_index()
-        self.repo_id = repo_id
-        self.last_index = last_index
-
-    def getStarHistory(self):
+    def get_star_history(self):
         # ref) https://karupoimou.hatenablog.com/entry/20200305/1583407204
         res = joblib.Parallel(
             n_jobs=-2, verbose=2)([joblib.delayed(self.process)(index) for index in range(0, self.last_index + 1, self.step)])
@@ -42,7 +40,7 @@ class Repository:
         )
         return response
 
-    def __get_last_index(self):
+    def __get_repo_id_and_last_index(self):
         endpoint = f'https://api.github.com/repos/{self.owner}/{self.repo_name}/stargazers'
         response = self.__get(endpoint)
 
